@@ -8,10 +8,18 @@
             android:id="@+id/nav_category"
             android:icon="@drawable/ic_baseline_restaurant_menu_24"
             android:title="@string/menu_category" />
+    </group>
 
+    <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="@string/menu_slideshow" />
+            android:id="@+id/nav_order"
+            android:icon="@drawable/ic_baseline_format_list_bulleted_24"
+            android:title="@string/menu_order" />
+    </group>
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_sign_out"
+            android:icon="@drawable/ic_baseline_exit_to_app_24"
+            android:title="@string/menu_sign_out" />
     </group>
 </menu>
