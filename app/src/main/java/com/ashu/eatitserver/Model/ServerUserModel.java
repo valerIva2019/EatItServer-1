@@ -1,4 +1,4 @@
-package com.ashu.eatitserver.Models;
+package com.ashu.eatitserver.Model;
 
 public class ServerUserModel {
     private String uid, name, phone;
