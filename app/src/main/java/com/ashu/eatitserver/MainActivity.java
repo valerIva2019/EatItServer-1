@@ -119,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == APP_REQUEST_CODE) {
             IdpResponse response = IdpResponse.fromResultIntent(data);
-            if (requestCode == RESULT_OK) {
+            if (resultCode == RESULT_OK) {
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             } else {
                 Toast.makeText(this, "Failed to sign in!", Toast.LENGTH_SHORT).show();

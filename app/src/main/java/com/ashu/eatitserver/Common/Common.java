@@ -1,6 +1,7 @@
 package com.ashu.eatitserver.Common;
 
 import com.ashu.eatitserver.Model.CategoryModel;
+import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.Model.ServerUserModel;
 
 public class Common {
@@ -11,4 +12,5 @@ public class Common {
     public static final int FULL_WIDTH_COLUMN = 1;
 
     public static ServerUserModel currentServerUser;
+    public static FoodModel selectedFood;
 }
