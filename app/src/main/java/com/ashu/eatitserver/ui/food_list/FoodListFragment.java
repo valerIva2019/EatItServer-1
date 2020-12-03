@@ -5,13 +5,12 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.SearchManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.PostProcessor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -22,7 +21,6 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -30,7 +28,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -40,13 +37,9 @@ import com.ashu.eatitserver.Common.Common;
 import com.ashu.eatitserver.Common.MySwiperHelper;
 import com.ashu.eatitserver.EventBus.ChangeMenuClick;
 import com.ashu.eatitserver.EventBus.ToastEvent;
-import com.ashu.eatitserver.Model.CategoryModel;
 import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.R;
 import com.bumptech.glide.Glide;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -101,34 +94,48 @@ public class FoodListFragment extends Fragment {
         });
         return root;
     }
+
     private void initViews() {
+
+        setHasOptionsMenu(true);
+
         dialog = new SpotsDialog.Builder().setContext(getContext()).setCancelable(false).build();
         storage = FirebaseStorage.getInstance();
         storageReference = storage.getReference();
 
-        ((AppCompatActivity)getActivity())
+        ((AppCompatActivity) getActivity())
                 .getSupportActionBar()
                 .setTitle(Common.categorySelected.getName());
 
-        setHasOptionsMenu(true);
 
         recycler_food_list.setHasFixedSize(true);
         recycler_food_list.setLayoutManager(new LinearLayoutManager(getContext()));
         layoutAnimationController = AnimationUtils.loadLayoutAnimation(getContext(), R.anim.layout_item_from_left);
 
-        MySwiperHelper mySwiperHelper = new MySwiperHelper(getContext(), recycler_food_list, 300) {
+
+        //Get Size
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int width = displayMetrics.widthPixels;
+
+        MySwiperHelper mySwiperHelper = new MySwiperHelper(getContext(), recycler_food_list, width/6) {
             @Override
             public void instantiateMyButton(RecyclerView.ViewHolder viewHolder, List<MyButton> buf) {
                 buf.add(new MyButton(getContext(), "Delete", 30, 0, Color.parseColor("#9b0000"),
                         pos -> {
                             if (foodModelList != null)
-                            Common.selectedFood = foodModelList.get(pos);
+                                Common.selectedFood = foodModelList.get(pos);
 
                             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                             builder.setTitle("DELETE")
                                     .setMessage("Do you want to delete this food ?")
-                                    .setNegativeButton("CANCEL", (dialogInterface, i) -> dialogInterface.dismiss()).setPositiveButton("DELETE", (dialogInterface, i) -> {
-                                        Common.categorySelected.getFoods().remove(pos);
+                                    .setNegativeButton("CANCEL", (dialogInterface, i) -> dialogInterface.dismiss())
+                                    .setPositiveButton("DELETE", (dialogInterface, i) -> {
+                                        FoodModel foodModel = adapter.getItemAtPosition(pos); //get item in adapter
+                                        if (foodModel.getPositionInList() == -1)
+                                            Common.categorySelected.getFoods().remove(pos);
+                                        else
+                                            Common.categorySelected.getFoods().remove(foodModel.getPositionInList());
                                         updateFood(Common.categorySelected.getFoods(), true);
                                     });
 
@@ -136,28 +143,72 @@ public class FoodListFragment extends Fragment {
                             deleteDialog.show();
                         }));
                 buf.add(new MyButton(getContext(), "Update", 30, 0, Color.parseColor("#560027"),
-                        pos -> showUpdateDialog(pos)));
+                        pos -> {
+                            FoodModel foodModel = adapter.getItemAtPosition(pos); //get item in adapter
+                            if (foodModel.getPositionInList() == -1)
+                                showUpdateDialog(pos, foodModel);
+                            else
+                                showUpdateDialog(foodModel.getPositionInList(), foodModel);
+                        }));
+                buf.add(new MyButton(getContext(), "Size", 30, 0, Color.parseColor("#12005e"),
+                        pos -> {
+                            FoodModel foodModel = adapter.getItemAtPosition(pos); //get item in adapter
+                            if (foodModel.getPositionInList() == -1)
+                                Common.selectedFood = foodModelList.get(pos);
+                            else
+                                Common.selectedFood = foodModel;
+
+                            //startActivity(new Intent(getContext(), SizeAddOnEditActivity.class));
+
+                            if (foodModel.getPositionInList() == -1) {
+                                //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, pos));
+                            }
+                            else {
+                                //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, foodModel.getPositionInList()));
+                            }
+
+
+                        }));
+                buf.add(new MyButton(getContext(), "Addon", 30, 0, Color.parseColor("#336699"),
+                        pos -> {
+                            FoodModel foodModel = adapter.getItemAtPosition(pos); //get item in adapter
+                            if (foodModel.getPositionInList() == -1)
+                                Common.selectedFood = foodModelList.get(pos);
+                            else
+                                Common.selectedFood = foodModel;
+
+                            //startActivity(new Intent(getContext(), SizeAddOnEditActivity.class));
+
+                            if (foodModel.getPositionInList() == -1) {
+                                //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, pos));
+                            }
+                            else {
+                                //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, foodModel.getPositionInList()));
+                            }
+                            //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, pos));
+
+                        }));
             }
         };
 
     }
 
-    private void showUpdateDialog(int pos) {
+    private void showUpdateDialog(int pos, FoodModel foodModel) {
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getContext());
         builder.setTitle("Update");
         builder.setMessage("Please fill information");
 
         View itemView = LayoutInflater.from(getContext()).inflate(R.layout.layout_update_food, null);
-        EditText edt_food_name =  itemView.findViewById(R.id.edt_food_name);
-        EditText edt_food_price =  itemView.findViewById(R.id.edt_food_price);
-        EditText edt_food_description =  itemView.findViewById(R.id.edt_food_description);
+        EditText edt_food_name = itemView.findViewById(R.id.edt_food_name);
+        EditText edt_food_price = itemView.findViewById(R.id.edt_food_price);
+        EditText edt_food_description = itemView.findViewById(R.id.edt_food_description);
         img_food = itemView.findViewById(R.id.img_food_image);
 
 
         //Set Data
-        edt_food_name.setText(new StringBuilder().append(Common.categorySelected.getFoods().get(pos).getName()));
-        edt_food_price.setText(new StringBuilder().append(Common.categorySelected.getFoods().get(pos).getPrice()));
-        edt_food_description.setText(new StringBuilder().append(Common.categorySelected.getFoods().get(pos).getDescription()));
+        edt_food_name.setText(new StringBuilder().append(foodModel.getName()));
+        edt_food_price.setText(new StringBuilder().append(foodModel.getPrice()));
+        edt_food_description.setText(new StringBuilder().append(foodModel.getDescription()));
 
         Glide.with(getContext()).load(Common.categorySelected.getFoods().get(pos).getImage()).into(img_food);
 
@@ -173,7 +224,7 @@ public class FoodListFragment extends Fragment {
         builder.setNegativeButton("CANCEL", (dialogInterface, i) -> dialogInterface.dismiss())
                 .setPositiveButton("UPDATE", (dialogInterface, i) -> {
 
-                    FoodModel updateFood = Common.categorySelected.getFoods().get(pos);
+                    FoodModel updateFood = foodModel;
                     updateFood.setName(edt_food_name.getText().toString());
                     updateFood.setDescription(edt_food_description.getText().toString());
                     updateFood.setPrice(TextUtils.isEmpty(edt_food_price.getText()) ? 0 :
@@ -234,7 +285,7 @@ public class FoodListFragment extends Fragment {
         FirebaseDatabase.getInstance().getReference(Common.CATEGORY_REF)
                 .child(Common.categorySelected.getMenu_id())
                 .updateChildren(updateData)
-                .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         foodListViewModel.getMutableLiveDataFoodList();
@@ -247,11 +298,11 @@ public class FoodListFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.search_menu, menu);
+        inflater.inflate(R.menu.food_list_menu, menu);
         MenuItem menuItem = menu.findItem(R.id.action_search);
 
-        SearchManager searchManager = (SearchManager)getActivity().getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView = (SearchView)menuItem.getActionView();
+        SearchManager searchManager = (SearchManager) getActivity().getSystemService(Context.SEARCH_SERVICE);
+        SearchView searchView = (SearchView) menuItem.getActionView();
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getActivity().getComponentName()));
 
 
@@ -259,7 +310,7 @@ public class FoodListFragment extends Fragment {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String s) {
-                startSearch(s);
+                startSearchFood(s);
                 return true;
             }
 
@@ -279,19 +330,20 @@ public class FoodListFragment extends Fragment {
             searchView.onActionViewCollapsed();
             menuItem.collapseActionView();
 
-            foodListViewModel.getMutableLiveDataFoodList();
+            foodListViewModel.getMutableLiveDataFoodList().setValue(Common.categorySelected.getFoods());
         });
     }
 
-    private void startSearch(String s) {
-        List<FoodModel> resultList = new ArrayList<>();
+    private void startSearchFood(String s) {
+        List<FoodModel> resultFood = new ArrayList<>();
         for (int i = 0; i < Common.categorySelected.getFoods().size(); i++) {
 
             FoodModel foodModel = Common.categorySelected.getFoods().get(i);
             if (foodModel.getName().toLowerCase().contains(s)) {
-                resultList.add(foodModel);
+                foodModel.setPositionInList(i);
+                resultFood.add(foodModel);
             }
-            foodListViewModel.getMutableLiveDataFoodList().setValue(resultList);
+            foodListViewModel.getMutableLiveDataFoodList().setValue(resultFood);
         }
     }
 

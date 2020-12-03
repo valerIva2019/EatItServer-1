@@ -38,15 +38,9 @@ import com.ashu.eatitserver.EventBus.ToastEvent;
 import com.ashu.eatitserver.Model.CategoryModel;
 import com.ashu.eatitserver.R;
 import com.bumptech.glide.Glide;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -212,56 +206,6 @@ public class CategoryFragment extends Fragment {
                 img_category.setImageURI(imageUri);
             }
         }
-    }
-
-    @Override
-    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.search_menu, menu);
-        MenuItem menuItem = menu.findItem(R.id.action_search);
-
-        SearchManager searchManager = (SearchManager) getActivity().getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView = (SearchView) menuItem.getActionView();
-        searchView.setSearchableInfo(searchManager.getSearchableInfo(getActivity().getComponentName()));
-
-
-        //event
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String s) {
-                startSearch(s);
-                return true;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String s) {
-                return false;
-            }
-        });
-
-        //clear text when clear text is pressed
-        ImageView closeButton = searchView.findViewById(R.id.search_close_btn);
-        closeButton.setOnClickListener(view -> {
-            EditText ed = searchView.findViewById(R.id.search_src_text);
-            //Clear Text
-            ed.setText("");
-            searchView.setQuery("", false);
-            searchView.onActionViewCollapsed();
-            menuItem.collapseActionView();
-
-            categoryViewModel.loadCategories();
-        });
-    }
-
-    private void startSearch(String s) {
-        List<CategoryModel> resultList = new ArrayList<>();
-        for (int i = 0; i < adapter.getListCategory().size(); i++) {
-
-            CategoryModel categoryModel = adapter.getListCategory().get(i);
-            if (categoryModel.getName().toLowerCase().contains(s)) {
-                resultList.add(categoryModel);
-            }
-        }
-        categoryViewModel.getCategoryListMutable().setValue(resultList);
     }
 
 
