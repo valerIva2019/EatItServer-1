@@ -34,6 +34,7 @@ import com.ashu.eatitserver.Adapter.MyCategoriesAdapter;
 import com.ashu.eatitserver.Common.Common;
 import com.ashu.eatitserver.Common.MySwiperHelper;
 import com.ashu.eatitserver.EventBus.MenuItemBack;
+import com.ashu.eatitserver.EventBus.ToastEvent;
 import com.ashu.eatitserver.Model.CategoryModel;
 import com.ashu.eatitserver.R;
 import com.bumptech.glide.Glide;
@@ -109,7 +110,7 @@ public class CategoryFragment extends Fragment {
         setHasOptionsMenu(true);
 
         dialog = new SpotsDialog.Builder().setContext(getContext()).setCancelable(false).build();
-        dialog.show();
+        //dialog.show();
         layoutAnimationController = AnimationUtils.loadLayoutAnimation(getContext(), R.anim.layout_item_from_left);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
 
@@ -194,10 +195,10 @@ public class CategoryFragment extends Fragment {
         FirebaseDatabase.getInstance().getReference(Common.CATEGORY_REF)
                 .child(Common.categorySelected.getMenu_id())
                 .updateChildren(updateData)
-                .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show()).addOnCompleteListener(task -> {
+                .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())
+                .addOnCompleteListener(task -> {
             categoryViewModel.loadCategories();
-            Toast.makeText(getContext(), "Update Success", Toast.LENGTH_SHORT).show();
-
+            EventBus.getDefault().postSticky(new ToastEvent(true, false));
         });
     }
 

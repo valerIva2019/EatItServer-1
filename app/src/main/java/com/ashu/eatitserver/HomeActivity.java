@@ -3,8 +3,11 @@ package com.ashu.eatitserver;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Menu;
+import android.widget.Toast;
 
 import com.ashu.eatitserver.EventBus.CategoryClick;
+import com.ashu.eatitserver.EventBus.ChangeMenuClick;
+import com.ashu.eatitserver.EventBus.ToastEvent;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
@@ -27,6 +30,8 @@ public class HomeActivity extends AppCompatActivity {
     private DrawerLayout drawer;
     private NavigationView navigationView;
     private NavController navController;
+    private int menuClick = -1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,9 +83,37 @@ public class HomeActivity extends AppCompatActivity {
     @Subscribe(sticky = true, threadMode =  ThreadMode.MAIN)
     public void onCategorySelected(CategoryClick event) {
         if (event.isSuccess()) {
+            if (menuClick != R.id.nav_food_list) {
+                navController.navigate(R.id.nav_food_list);
+                menuClick = R.id.nav_food_list;
+            }
+        }
+    }
+
+    @Subscribe(sticky = true, threadMode =  ThreadMode.MAIN)
+    public void onChangeMenuClick(ChangeMenuClick event) {
+        if (event.isFromFoodList()) {
+            navController.popBackStack(R.id.nav_category, true);
+            navController.navigate(R.id.nav_category);
+
+        } else {
+            navController.popBackStack(R.id.nav_food_list, true);
             navController.navigate(R.id.nav_food_list);
-            //Toast.makeText(this, "Click to " + event.getCategoryModel().getName(), Toast.LENGTH_LONG).show();
 
         }
+
+
+        menuClick = -1;
+    }
+
+    @Subscribe(sticky = true, threadMode =  ThreadMode.MAIN)
+    public void onToastEvent(ToastEvent event) {
+        if (event.isUpdate()) {
+            Toast.makeText(this, "Update Success", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Delete Success", Toast.LENGTH_SHORT).show();
+        }
+            EventBus.getDefault().postSticky(new ChangeMenuClick(event.isFromFoodList()));
+
     }
 }

@@ -38,6 +38,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ashu.eatitserver.Adapter.MyFoodListAdapter;
 import com.ashu.eatitserver.Common.Common;
 import com.ashu.eatitserver.Common.MySwiperHelper;
+import com.ashu.eatitserver.EventBus.ChangeMenuClick;
+import com.ashu.eatitserver.EventBus.ToastEvent;
 import com.ashu.eatitserver.Model.CategoryModel;
 import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.R;
@@ -232,13 +234,11 @@ public class FoodListFragment extends Fragment {
         FirebaseDatabase.getInstance().getReference(Common.CATEGORY_REF)
                 .child(Common.categorySelected.getMenu_id())
                 .updateChildren(updateData)
-                .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show()).addOnCompleteListener(task -> {
+                .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show())
+                .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         foodListViewModel.getMutableLiveDataFoodList();
-                        if (isDelete)
-                            Toast.makeText(getContext(), "Delete Success", Toast.LENGTH_SHORT).show();
-                        else
-                            Toast.makeText(getContext(), "Update Success", Toast.LENGTH_SHORT).show();
+                        EventBus.getDefault().postSticky(new ToastEvent(!isDelete, true));
 
                     }
                 });
@@ -293,5 +293,11 @@ public class FoodListFragment extends Fragment {
             }
             foodListViewModel.getMutableLiveDataFoodList().setValue(resultList);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        EventBus.getDefault().postSticky(new ChangeMenuClick(true));
+        super.onDestroy();
     }
 }
