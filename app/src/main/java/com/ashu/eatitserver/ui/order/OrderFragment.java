@@ -318,6 +318,7 @@ public class OrderFragment extends Fragment {
                                                         } else {
                                                             Toast.makeText(getContext(), "Successfully updated order status but failed to send notification", Toast.LENGTH_SHORT).show();
                                                         }
+                                                        dialog.dismiss();
                                                     }, throwable -> {
                                                         dialog.dismiss();
                                                         Toast.makeText(getContext(), ""+throwable.getMessage(), Toast.LENGTH_SHORT).show();
@@ -339,7 +340,7 @@ public class OrderFragment extends Fragment {
                                 });
 
 
-
+                        dialog.dismiss();
                         adapter.removeItem(pos);
                         adapter.notifyItemRemoved(pos);
                         updateTextCounter();

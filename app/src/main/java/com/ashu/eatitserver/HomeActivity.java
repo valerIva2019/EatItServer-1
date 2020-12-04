@@ -60,7 +60,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_category, R.id.nav_food_list, R.id.nav_order)
+                R.id.nav_category, R.id.nav_food_list, R.id.nav_order, R.id.nav_shipper)
                 .setDrawerLayout(drawer)
                 .build();
         navController = Navigation.findNavController(this, R.id.nav_host_fragment);
@@ -167,6 +167,12 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (item.getItemId() != menuClick) {
                     navController.popBackStack();
                     navController.navigate(R.id.nav_order);
+                }
+                break;
+            case R.id.nav_shipper:
+                if (item.getItemId() != menuClick) {
+                    navController.popBackStack();
+                    navController.navigate(R.id.nav_shipper);
                 }
                 break;
             case R.id.nav_sign_out:
