@@ -2,6 +2,7 @@ package com.ashu.eatitserver;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextPaint;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
@@ -12,10 +13,16 @@ import com.ashu.eatitserver.Common.Common;
 import com.ashu.eatitserver.EventBus.CategoryClick;
 import com.ashu.eatitserver.EventBus.ChangeMenuClick;
 import com.ashu.eatitserver.EventBus.ToastEvent;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingService;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -46,6 +53,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        subscribeToTopic(Common.createTopicOrder());
+
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         // Passing each menu ID as a set of Ids because each
@@ -66,6 +75,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         Common.setSpanString("Hey, ", Common.currentServerUser.getName(), txt_user);
 
         menuClick = R.id.nav_category; //Default
+    }
+
+    private void subscribeToTopic(String topicOrder) {
+        FirebaseMessaging.getInstance()
+                .subscribeToTopic(topicOrder)
+                .addOnFailureListener(e -> Toast.makeText(HomeActivity.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show()).addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Toast.makeText(HomeActivity.this, "Failed: "+task.isSuccessful(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     @Override

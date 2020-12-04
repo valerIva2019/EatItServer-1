@@ -45,15 +45,23 @@ import com.ashu.eatitserver.EventBus.AddOnSizeEditEvent;
 import com.ashu.eatitserver.EventBus.ChangeMenuClick;
 import com.ashu.eatitserver.EventBus.LoadOrderEvent;
 import com.ashu.eatitserver.Model.CategoryModel;
+import com.ashu.eatitserver.Model.FCMSendData;
 import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.Model.OrderModel;
+import com.ashu.eatitserver.Model.TokenModel;
 import com.ashu.eatitserver.R;
+import com.ashu.eatitserver.Remote.IFCMService;
+import com.ashu.eatitserver.Remote.RetrofitFCMClient;
 import com.ashu.eatitserver.SizeAddonEditActivity;
 import com.ashu.eatitserver.ui.category.CategoryViewModel;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule_SchemaVersionFactory;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -73,6 +81,9 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import dmax.dialog.SpotsDialog;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class OrderFragment extends Fragment {
 
@@ -89,6 +100,9 @@ public class OrderFragment extends Fragment {
 
     LayoutAnimationController layoutAnimationController;
     MyOrderAdapter adapter;
+
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
+    private IFCMService ifcmService;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -114,6 +128,7 @@ public class OrderFragment extends Fragment {
 
     private void initViews() {
 
+        ifcmService = RetrofitFCMClient.getInstance().create(IFCMService.class);
         setHasOptionsMenu(true);
 
         recycler_order.setHasFixedSize(true);
@@ -274,10 +289,60 @@ public class OrderFragment extends Fragment {
                     .updateChildren(updateData)
                     .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show())
                     .addOnSuccessListener(aVoid -> {
+
+                        android.app.AlertDialog dialog = new SpotsDialog.Builder().setContext(getContext()).setCancelable(false).build();
+                        dialog.show();
+
+                        //get user token
+                        FirebaseDatabase.getInstance().getReference(Common.TOKEN_REF)
+                                .child(orderModel.getUserId())
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        if (snapshot.exists()) {
+                                            TokenModel tokenModel = snapshot.getValue(TokenModel.class);
+                                            Map<String, String> notiData = new HashMap<>();
+                                            notiData.put(Common.NOT1_TITLE, "Order Update");
+                                            notiData.put(Common.NOT1_CONTENT, "Order status for "+orderModel.getKey()+ " was updated to : " + Common.convertStatusToString(status));
+
+
+                                            FCMSendData sendData = new FCMSendData(Common.createTopicOrder(), notiData);
+
+
+                                            compositeDisposable.add(ifcmService.sendNotification(sendData)
+                                                    .subscribeOn(Schedulers.io())
+                                                    .observeOn(AndroidSchedulers.mainThread())
+                                                    .subscribe(fcmResponse -> {
+                                                        if (fcmResponse.getSuccess() == 1) {
+                                                            Toast.makeText(getContext(), "Successfully updated order status", Toast.LENGTH_SHORT).show();
+                                                        } else {
+                                                            Toast.makeText(getContext(), "Successfully updated order status but failed to send notification", Toast.LENGTH_SHORT).show();
+                                                        }
+                                                    }, throwable -> {
+                                                        dialog.dismiss();
+                                                        Toast.makeText(getContext(), ""+throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                                                    }));
+
+
+                                        } else {
+                                            dialog.dismiss();
+                                            Toast.makeText(getContext(), "Token not found", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        dialog.dismiss();
+                                        Toast.makeText(getContext(), ""+error.getMessage(), Toast.LENGTH_SHORT).show();
+
+                                    }
+                                });
+
+
+
                         adapter.removeItem(pos);
                         adapter.notifyItemRemoved(pos);
                         updateTextCounter();
-                        Toast.makeText(getContext(), "Successfully updated order status", Toast.LENGTH_SHORT).show();
 
                     });
         } else {
@@ -322,6 +387,7 @@ public class OrderFragment extends Fragment {
         if (EventBus.getDefault().isRegistered(this))
             EventBus.getDefault().unregister(this);
 
+        compositeDisposable.clear();
         super.onStop();
     }
 
