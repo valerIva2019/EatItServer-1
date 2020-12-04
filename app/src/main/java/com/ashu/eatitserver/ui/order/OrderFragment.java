@@ -1,8 +1,14 @@
 package com.ashu.eatitserver.ui.order;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -11,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -28,13 +35,27 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ashu.eatitserver.Adapter.MyCategoriesAdapter;
 import com.ashu.eatitserver.Adapter.MyOrderAdapter;
 import com.ashu.eatitserver.Common.BottomSheetOrderFragment;
+import com.ashu.eatitserver.Common.Common;
+import com.ashu.eatitserver.Common.MySwiperHelper;
+import com.ashu.eatitserver.EventBus.AddOnSizeEditEvent;
 import com.ashu.eatitserver.EventBus.ChangeMenuClick;
 import com.ashu.eatitserver.EventBus.LoadOrderEvent;
 import com.ashu.eatitserver.Model.CategoryModel;
+import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.Model.OrderModel;
 import com.ashu.eatitserver.R;
+import com.ashu.eatitserver.SizeAddonEditActivity;
 import com.ashu.eatitserver.ui.category.CategoryViewModel;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule_SchemaVersionFactory;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.FirebaseDatabase;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -92,6 +113,78 @@ public class OrderFragment extends Fragment {
         recycler_order.setHasFixedSize(true);
         recycler_order.setLayoutManager(new LinearLayoutManager(getContext()));
         layoutAnimationController = AnimationUtils.loadLayoutAnimation(getContext(), R.anim.layout_item_from_left);
+
+        //Get Size
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int width = displayMetrics.widthPixels;
+
+        MySwiperHelper mySwiperHelper = new MySwiperHelper(getContext(), recycler_order, width/6) {
+            @Override
+            public void instantiateMyButton(RecyclerView.ViewHolder viewHolder, List<MyButton> buf) {
+                buf.add(new MyButton(getContext(), "Directions", 30, 0, Color.parseColor("#9b0000"),
+                        pos -> {
+
+                        }));
+                buf.add(new MyButton(getContext(), "Call", 30, 0, Color.parseColor("#560027"),
+                        pos -> Dexter.withActivity(getActivity())
+                                .withPermission(Manifest.permission.CALL_PHONE)
+                                .withListener(new PermissionListener() {
+                                    @Override
+                                    public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
+                                        OrderModel orderModel = adapter.getItemAtPosition(pos);
+                                        Intent intent = new Intent();
+                                        intent.setAction(Intent.ACTION_DIAL);
+                                        intent.setData(Uri.parse("tel: " + orderModel.getUserPhone()));
+                                        startActivity(intent);
+                                    }
+
+                                    @Override
+                                    public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
+                                        Toast.makeText(getContext(), "You must accept "+permissionDeniedResponse.getPermissionName(), Toast.LENGTH_SHORT).show();
+                                    }
+
+                                    @Override
+                                    public void onPermissionRationaleShouldBeShown(PermissionRequest permissionRequest, PermissionToken permissionToken) {
+
+                                    }
+                                }).check()));
+                buf.add(new MyButton(getContext(), "Remove", 30, 0, Color.parseColor("#12005e"),
+                        pos -> {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                            builder.setTitle("DELETE")
+                                    .setMessage("Do you really want to delete this order?")
+                                    .setNegativeButton("CANCEL", (dialogInterface, i) -> dialogInterface.dismiss())
+                                    .setPositiveButton("DELETE", (dialogInterface, i) -> {
+                                        OrderModel orderModel = adapter.getItemAtPosition(pos); //get item in adapter
+                                        FirebaseDatabase.getInstance().getReference(Common.ORDER_REF)
+                                                .child(orderModel.getKey())
+                                                .removeValue()
+                                                .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show()).addOnSuccessListener(aVoid -> {
+                                                    adapter.removeItem(pos);
+                                                    adapter.notifyItemRemoved(pos);
+                                                    txt_order_filter.setText(new StringBuilder("Orders (").append(adapter.getItemCount()).append(")"));
+                                                    dialogInterface.dismiss();
+                                            Toast.makeText(getContext(), "Order has been deleted !!", Toast.LENGTH_SHORT).show();
+
+                                        });
+                                    });
+
+                            AlertDialog deleteDialog = builder.create();
+                            deleteDialog.show();
+
+                            Button negativeButton = deleteDialog.getButton(DialogInterface.BUTTON_NEGATIVE);
+                            negativeButton.setTextColor(Color.GRAY);
+                            Button positiveButton = deleteDialog.getButton(DialogInterface.BUTTON_POSITIVE);
+                            positiveButton.setTextColor(Color.RED);
+
+                        }));
+                buf.add(new MyButton(getContext(), "Edit", 30, 0, Color.parseColor("#336699"),
+                        pos -> {
+
+                        }));
+            }
+        };
 
     }
 

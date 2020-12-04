@@ -73,6 +73,15 @@ public class MyOrderAdapter extends RecyclerView.Adapter<MyOrderAdapter.MyViewHo
         return orderModelList.size();
     }
 
+    public OrderModel getItemAtPosition(int pos) {
+        return orderModelList.get(pos);
+    }
+
+    public void removeItem(int pos) {
+        orderModelList.remove(pos);
+
+    }
+
     public class MyViewHolder extends RecyclerView.ViewHolder{
         Unbinder unbinder;
 
