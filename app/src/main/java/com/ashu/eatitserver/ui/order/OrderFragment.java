@@ -6,9 +6,12 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -19,6 +22,7 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -61,7 +65,9 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -163,7 +169,7 @@ public class OrderFragment extends Fragment {
                                                 .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show()).addOnSuccessListener(aVoid -> {
                                                     adapter.removeItem(pos);
                                                     adapter.notifyItemRemoved(pos);
-                                                    txt_order_filter.setText(new StringBuilder("Orders (").append(adapter.getItemCount()).append(")"));
+                                                    updateTextCounter();
                                                     dialogInterface.dismiss();
                                             Toast.makeText(getContext(), "Order has been deleted !!", Toast.LENGTH_SHORT).show();
 
@@ -180,13 +186,110 @@ public class OrderFragment extends Fragment {
 
                         }));
                 buf.add(new MyButton(getContext(), "Edit", 30, 0, Color.parseColor("#336699"),
-                        pos -> {
-
-                        }));
+                        pos -> showEditDialog(adapter.getItemAtPosition(pos), pos)));
             }
         };
 
     }
+
+    private void showEditDialog(OrderModel orderModel, int pos) {
+        View layout_dialog;
+        AlertDialog.Builder builder;
+        if (orderModel.getOrderStatus() == 0) {
+            layout_dialog = LayoutInflater.from(getContext()).inflate(R.layout.layout_dialog_shipping, null);
+            builder = new AlertDialog.Builder(getContext(), android.R.style.Theme_Material_Light_NoActionBar_Fullscreen)
+            .setView(layout_dialog);
+        } else  if(orderModel.getOrderStatus() == -1) { // cancelled
+            layout_dialog = LayoutInflater.from(getContext()).inflate(R.layout.layout_dialog_cancelled, null);
+            builder = new AlertDialog.Builder(getContext()).setView(layout_dialog);
+        } else {
+            layout_dialog = LayoutInflater.from(getContext()).inflate(R.layout.layout_dialog_shipped, null);
+            builder = new AlertDialog.Builder(getContext()).setView(layout_dialog);
+        }
+        Button btn_ok = layout_dialog.findViewById(R.id.btn_ok);
+        Button btn_cancel = layout_dialog.findViewById(R.id.btn_cancel);
+
+        RadioButton rdi_shipping = layout_dialog.findViewById(R.id.rdi_shipping);
+        RadioButton rdi_shipped = layout_dialog.findViewById(R.id.rdi_shipped);
+        RadioButton rdi_cancelled = layout_dialog.findViewById(R.id.rdi_cancelled);
+        RadioButton rdi_delete = layout_dialog.findViewById(R.id.rdi_delete);
+        RadioButton rdi_restore_placed = layout_dialog.findViewById(R.id.rdi_restore_placed);
+
+        TextView txt_status = layout_dialog.findViewById(R.id.txt_status);
+
+        txt_status.setText(new StringBuilder("Order Status (")
+        .append(Common.convertStatusToString(orderModel.getOrderStatus())).append(")"));
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        //Custom dialog
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        dialog.getWindow().setGravity(Gravity.CENTER);
+
+        btn_cancel.setOnClickListener(view -> dialog.dismiss());
+
+        btn_ok.setOnClickListener(view -> {
+            dialog.dismiss();
+            if (rdi_cancelled != null && rdi_cancelled.isChecked())
+                updateOrder(pos, orderModel, -1);
+            else if (rdi_shipping != null && rdi_shipping.isChecked())
+                updateOrder(pos, orderModel, 1);
+            else if (rdi_shipped != null && rdi_shipped.isChecked())
+                updateOrder(pos, orderModel, 2);
+            else if (rdi_restore_placed != null && rdi_restore_placed.isChecked())
+                updateOrder(pos, orderModel, 0);
+            else if (rdi_delete != null && rdi_delete.isChecked())
+                deleteOrder(pos, orderModel);
+
+        });
+    }
+
+    private void deleteOrder(int pos, OrderModel orderModel) {
+        if (!TextUtils.isEmpty(orderModel.getKey())) {
+
+            FirebaseDatabase.getInstance().getReference(Common.ORDER_REF)
+                    .child(orderModel.getKey())
+                    .removeValue()
+                    .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show())
+                    .addOnSuccessListener(aVoid -> {
+                        adapter.removeItem(pos);
+                        adapter.notifyItemRemoved(pos);
+                        updateTextCounter();
+                        Toast.makeText(getContext(), "Successfully deleted order", Toast.LENGTH_SHORT).show();
+
+                    });
+        } else {
+            Toast.makeText(getContext(), "Error : Order number is null or empty", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateOrder(int pos, OrderModel orderModel, int status) {
+        if (!TextUtils.isEmpty(orderModel.getKey())) {
+            Map<String, Object> updateData = new HashMap<>();
+            updateData.put("orderStatus", status);
+
+            FirebaseDatabase.getInstance().getReference(Common.ORDER_REF)
+                    .child(orderModel.getKey())
+                    .updateChildren(updateData)
+                    .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show())
+                    .addOnSuccessListener(aVoid -> {
+                        adapter.removeItem(pos);
+                        adapter.notifyItemRemoved(pos);
+                        updateTextCounter();
+                        Toast.makeText(getContext(), "Successfully updated order status", Toast.LENGTH_SHORT).show();
+
+                    });
+        } else {
+            Toast.makeText(getContext(), "Error : Order number is null or empty", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateTextCounter() {
+        txt_order_filter.setText(new StringBuilder("Orders (")
+                .append(adapter.getItemCount()).append(")"));
+    }
+
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
@@ -195,16 +298,13 @@ public class OrderFragment extends Fragment {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_filter:
-                BottomSheetOrderFragment bottomSheetOrderFragment = BottomSheetOrderFragment.getInstance();
-                bottomSheetOrderFragment.show(getActivity().getSupportFragmentManager(), "OrderFilter");
-                break;
-        }
 
-
-        return true;
-
+        if (item.getItemId() == R.id.action_filter) {
+            BottomSheetOrderFragment bottomSheetOrderFragment = BottomSheetOrderFragment.getInstance();
+            bottomSheetOrderFragment.show(getActivity().getSupportFragmentManager(), "OrderFilter");
+            return true;
+        } else
+            return super.onOptionsItemSelected(item);
     }
 
     @Override
