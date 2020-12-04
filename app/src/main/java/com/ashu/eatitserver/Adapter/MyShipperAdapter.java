@@ -72,12 +72,6 @@ public class MyShipperAdapter extends RecyclerView.Adapter<MyShipperAdapter.MyVi
         @BindView(R.id.btn_enable)
         SwitchCompat btn_enable;
 
-        IRecyclerClickListener listener;
-
-        public void setListener(IRecyclerClickListener listener) {
-            this.listener = listener;
-        }
-
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
             unbinder = ButterKnife.bind(this, itemView);
