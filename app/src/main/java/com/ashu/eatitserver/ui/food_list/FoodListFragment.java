@@ -35,10 +35,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.ashu.eatitserver.Adapter.MyFoodListAdapter;
 import com.ashu.eatitserver.Common.Common;
 import com.ashu.eatitserver.Common.MySwiperHelper;
+import com.ashu.eatitserver.EventBus.AddOnSizeEditEvent;
 import com.ashu.eatitserver.EventBus.ChangeMenuClick;
 import com.ashu.eatitserver.EventBus.ToastEvent;
 import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.R;
+import com.ashu.eatitserver.SizeAddonEditActivity;
 import com.bumptech.glide.Glide;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
@@ -158,13 +160,13 @@ public class FoodListFragment extends Fragment {
                             else
                                 Common.selectedFood = foodModel;
 
-                            //startActivity(new Intent(getContext(), SizeAddOnEditActivity.class));
+                            startActivity(new Intent(getContext(), SizeAddonEditActivity.class));
 
                             if (foodModel.getPositionInList() == -1) {
-                                //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, pos));
+                                EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, pos));
                             }
                             else {
-                                //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, foodModel.getPositionInList()));
+                                EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, foodModel.getPositionInList()));
                             }
 
 
@@ -177,15 +179,15 @@ public class FoodListFragment extends Fragment {
                             else
                                 Common.selectedFood = foodModel;
 
-                            //startActivity(new Intent(getContext(), SizeAddOnEditActivity.class));
+                            startActivity(new Intent(getContext(), SizeAddonEditActivity.class));
 
                             if (foodModel.getPositionInList() == -1) {
-                                //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, pos));
+                                EventBus.getDefault().postSticky(new AddOnSizeEditEvent(true, pos));
                             }
                             else {
-                                //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, foodModel.getPositionInList()));
+                                EventBus.getDefault().postSticky(new AddOnSizeEditEvent(true, foodModel.getPositionInList()));
                             }
-                            //EventBus.getDefault().postSticky(new AddOnSizeEditEvent(false, pos));
+                            EventBus.getDefault().postSticky(new AddOnSizeEditEvent(true, pos));
 
                         }));
             }

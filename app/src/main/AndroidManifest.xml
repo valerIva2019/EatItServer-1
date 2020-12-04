@@ -11,10 +11,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EatItServer"
         tools:replace="android:theme">
+        <activity android:name=".SizeAddonEditActivity"/>
         <activity
             android:name=".HomeActivity"
             android:label="@string/title_activity_home"
-            android:theme="@style/Theme.EatItServer.NoActionBar"></activity>
+            android:theme="@style/Theme.EatItServer.NoActionBar" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
