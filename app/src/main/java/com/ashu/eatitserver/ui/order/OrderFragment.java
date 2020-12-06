@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -21,52 +22,39 @@ import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.ashu.eatitserver.Adapter.MyCategoriesAdapter;
 import com.ashu.eatitserver.Adapter.MyOrderAdapter;
 import com.ashu.eatitserver.Adapter.MyShipperSelectionAdapter;
 import com.ashu.eatitserver.Callback.IShipperLoadCallbackListener;
 import com.ashu.eatitserver.Common.BottomSheetOrderFragment;
 import com.ashu.eatitserver.Common.Common;
 import com.ashu.eatitserver.Common.MySwiperHelper;
-import com.ashu.eatitserver.EventBus.AddOnSizeEditEvent;
 import com.ashu.eatitserver.EventBus.ChangeMenuClick;
 import com.ashu.eatitserver.EventBus.LoadOrderEvent;
-import com.ashu.eatitserver.Model.CategoryModel;
 import com.ashu.eatitserver.Model.FCMSendData;
-import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.Model.OrderModel;
 import com.ashu.eatitserver.Model.ShipperModel;
+import com.ashu.eatitserver.Model.ShippingOrderModel;
 import com.ashu.eatitserver.Model.TokenModel;
 import com.ashu.eatitserver.R;
 import com.ashu.eatitserver.Remote.IFCMService;
 import com.ashu.eatitserver.Remote.RetrofitFCMClient;
-import com.ashu.eatitserver.SizeAddonEditActivity;
-import com.ashu.eatitserver.ui.category.CategoryViewModel;
-import com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule_SchemaVersionFactory;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.messaging.FirebaseMessaging;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -215,13 +203,17 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
 
                         }));
                 buf.add(new MyButton(getContext(), "Edit", 30, 0, Color.parseColor("#336699"),
-                        pos -> showEditDialog(adapter.getItemAtPosition(pos), pos)));
+                        pos -> {
+                            Log.d("pos", "sending showEditDialog: " + pos);
+                            showEditDialog(adapter.getItemAtPosition(pos), pos); }));
             }
         };
 
     }
 
     private void showEditDialog(OrderModel orderModel, int pos) {
+        Log.d("pos", "showEditDialog: " + pos);
+
         View layout_dialog;
         AlertDialog.Builder builder;
         if (orderModel.getOrderStatus() == 0) {
@@ -271,6 +263,8 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
     private void loadShipperList(int pos, OrderModel orderModel, AlertDialog dialog, Button btn_ok,
                                  Button btn_cancel, RadioButton rdi_shipping, RadioButton rdi_shipped,
                                  RadioButton rdi_cancelled, RadioButton rdi_delete, RadioButton rdi_restore_placed) {
+        Log.d("pos", "loadShipperList: " + pos);
+
         List<ShipperModel> tempList = new ArrayList<>();
         DatabaseReference shipperRef = FirebaseDatabase.getInstance().getReference(Common.SHIPPER_REF);
         Query shipperActive = shipperRef.orderByChild("active").equalTo(true);
@@ -299,6 +293,8 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
                             RadioButton rdi_delete, RadioButton rdi_restore_placed) {
 
         //Custom dialog
+        Log.d("pos", "showDialog: " + pos);
+
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         dialog.getWindow().setGravity(Gravity.CENTER);
 
@@ -310,14 +306,13 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
                 updateOrder(pos, orderModel, -1);
                 dialog.dismiss();
             } else if (rdi_shipping != null && rdi_shipping.isChecked()) {
-               // updateOrder(pos, orderModel, 1);
+
                 ShipperModel shipperModel;
                 if (myShipperSelectionAdapter != null) {
                     shipperModel = myShipperSelectionAdapter.getSelectedShipper();
                     if (shipperModel != null) {
-                        updateOrder(pos, orderModel, 1);
+                        createShippingOrder(pos, shipperModel, orderModel, dialog);
                         Toast.makeText(getContext(), "Order sent to "+shipperModel.getName(), Toast.LENGTH_SHORT).show();
-                        dialog.dismiss();
 
                     } else {
                         Toast.makeText(getContext(), "Please select shipper", Toast.LENGTH_SHORT).show();
@@ -335,6 +330,31 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
             }
 
         });
+    }
+
+    private void createShippingOrder(int pos, ShipperModel shipperModel, OrderModel orderModel, AlertDialog dialog) {
+
+        Log.d("pos", "createShippingOrder: " + pos);
+
+        ShippingOrderModel shippingOrderModel = new ShippingOrderModel();
+        shippingOrderModel.setShipperPhone(shipperModel.getPhone());
+        shippingOrderModel.setShipperName(shipperModel.getName());
+        shippingOrderModel.setOrderModel(orderModel);
+        shippingOrderModel.setStartTrip(false);
+        shippingOrderModel.setCurrentLat(-1.0);
+        shippingOrderModel.setCurrentLng(-1.0);
+
+        FirebaseDatabase.getInstance().getReference(Common.SHIPPING_ORDER_REF)
+                .push()
+                .setValue(shippingOrderModel)
+                .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show())
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        dialog.dismiss();
+                        updateOrder(pos, orderModel, 1);
+                        Toast.makeText(getContext(), "Order has been sent to shipper", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void deleteOrder(int pos, OrderModel orderModel) {
@@ -383,7 +403,7 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
                                             notiData.put(Common.NOT1_CONTENT, "Order status for " + orderModel.getKey() + " was updated to : " + Common.convertStatusToString(status));
 
 
-                                            FCMSendData sendData = new FCMSendData(Common.createTopicOrder(), notiData);
+                                            FCMSendData sendData = new FCMSendData(tokenModel.getToken(), notiData);
 
 
                                             compositeDisposable.add(ifcmService.sendNotification(sendData)
@@ -418,6 +438,7 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
 
 
                         dialog.dismiss();
+                        Log.d("pos", "updateOrder: " + pos);
                         adapter.removeItem(pos);
                         adapter.notifyItemRemoved(pos);
                         updateTextCounter();

@@ -32,6 +32,7 @@ public class Common {
     public static final String CATEGORY_REF = "Category";
     public static final String ORDER_REF = "Order";
     public static final String SHIPPER_REF = "Shippers";
+    public static final String SHIPPING_ORDER_REF = "ShippingOrder";
     public static CategoryModel categorySelected;
     public static final int DEFAULT_COLUMN_COUNT = 0;
     public static final int FULL_WIDTH_COLUMN = 1;
