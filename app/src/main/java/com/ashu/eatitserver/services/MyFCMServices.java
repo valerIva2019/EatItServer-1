@@ -29,7 +29,7 @@ public class MyFCMServices extends FirebaseMessagingService {
         super.onNewToken(s);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null)
-            Common.updateToken(this, s);
+            Common.updateToken(this, s, true, false);
     }
 
 }
