@@ -22,10 +22,15 @@ import androidx.core.app.NotificationCompat;
 
 import com.ashu.eatitserver.Model.CategoryModel;
 import com.ashu.eatitserver.Model.FoodModel;
+import com.ashu.eatitserver.Model.OrderModel;
 import com.ashu.eatitserver.Model.ServerUserModel;
 import com.ashu.eatitserver.Model.TokenModel;
 import com.ashu.eatitserver.R;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Common {
     public static final String SERVER_REF = "Server";
@@ -42,6 +47,7 @@ public class Common {
 
     public static ServerUserModel currentServerUser;
     public static FoodModel selectedFood;
+    public static OrderModel currentOrderSelected;
 
 
     public static void setSpanString(String welcome, String name, TextView textView) {
@@ -124,4 +130,38 @@ public class Common {
     public static String createTopicOrder() {
         return "/topics/new_order";
     }
+
+    public static List<LatLng> decodePoly (String encoded) {
+        List poly = new ArrayList();
+        int index = 0, len = encoded.length();
+        int lat =0, lng = 0;
+        while (index < len) {
+            int b, shift =0, result =0;
+            do {
+                b = encoded.charAt(index++)-63;
+                result |= (b & 0xff) << shift;
+                shift+=5;
+            } while (b >= 0x20);
+
+            int dLat = ((result & 1) != 0 ? ~ (result >> 1):(result >> 1));
+            lat+=dLat;
+
+            shift =0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++)-63;
+                result |= (b & 0xff) << shift;
+                shift+=5;
+            } while (b >= 0x20);
+
+
+            int dLng = ((result & 1) != 0 ? ~ (result >> 1):(result >> 1));
+            lng+=dLng;
+
+            LatLng p = new LatLng((((double) lat/1E5)), (((double)lng/1E5)));
+            poly.add(p);
+        }
+        return poly;
+    }
+
 }

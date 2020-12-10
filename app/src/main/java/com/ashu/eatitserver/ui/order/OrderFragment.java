@@ -49,6 +49,7 @@ import com.ashu.eatitserver.Model.TokenModel;
 import com.ashu.eatitserver.R;
 import com.ashu.eatitserver.Remote.IFCMService;
 import com.ashu.eatitserver.Remote.RetrofitFCMClient;
+import com.ashu.eatitserver.TrackingOrderActivity;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -147,7 +148,13 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
             public void instantiateMyButton(RecyclerView.ViewHolder viewHolder, List<MyButton> buf) {
                 buf.add(new MyButton(getContext(), "Directions", 30, 0, Color.parseColor("#9b0000"),
                         pos -> {
-
+                            OrderModel orderModel = ((MyOrderAdapter)recycler_order.getAdapter()).getItemAtPosition(pos);
+                            if (orderModel.getOrderStatus() == 1) {
+                                Common.currentOrderSelected = orderModel;
+                                startActivity(new Intent(getContext(), TrackingOrderActivity.class));
+                            } else {
+                                Toast.makeText(getContext(), "The order can't be tracked as the status is not shipping", Toast.LENGTH_SHORT).show();
+                            }
                         }));
                 buf.add(new MyButton(getContext(), "Call", 30, 0, Color.parseColor("#560027"),
                         pos -> Dexter.withActivity(getActivity())

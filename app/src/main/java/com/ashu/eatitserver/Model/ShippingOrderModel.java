@@ -1,6 +1,7 @@
 package com.ashu.eatitserver.Model;
 
 public class ShippingOrderModel {
+    private String key;
     private String shipperPhone, shipperName;
     private double currentLat, currentLng;
     private OrderModel orderModel;
@@ -55,5 +56,13 @@ public class ShippingOrderModel {
 
     public void setStartTrip(boolean startTrip) {
         isStartTrip = startTrip;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 }

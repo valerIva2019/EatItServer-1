@@ -17,5 +17,6 @@
     <string name="menu_shipper">Shippers</string>
     <string name="menu_sign_out">Sign out</string>
     <string name="popular_categories">Popular Categories</string>
+    <string name="title_activity_tracking_order">Map</string>
 
 </resources>
