@@ -345,7 +345,7 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
         shippingOrderModel.setCurrentLng(-1.0);
 
         FirebaseDatabase.getInstance().getReference(Common.SHIPPING_ORDER_REF)
-                .push()
+                .child(orderModel.getKey())
                 .setValue(shippingOrderModel)
                 .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show())
                 .addOnCompleteListener(task -> {
