@@ -114,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
                         createSignInIntentBuilder().setAvailableProviders(providers).build(),
                 APP_REQUEST_CODE);
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -126,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
     private void showRegisterDialog(FirebaseUser user) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Register");
@@ -180,7 +182,9 @@ public class MainActivity extends AppCompatActivity {
     private void goToHomeActivity(ServerUserModel serverUserModel) {
         dialog.dismiss();
         Common.currentServerUser = serverUserModel;
-        startActivity(new Intent(MainActivity.this, HomeActivity.class));
+        Intent intent = new Intent(MainActivity.this, HomeActivity.class);
+        intent.putExtra(Common.IS_OPEN_ACTIVITY_NEW_ORDER, getIntent().getBooleanExtra(Common.IS_OPEN_ACTIVITY_NEW_ORDER, false));
+        startActivity(intent);
         finish();
     }
 

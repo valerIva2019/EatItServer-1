@@ -77,16 +77,24 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         Common.setSpanString("Hey, ", Common.currentServerUser.getName(), txt_user);
 
         menuClick = R.id.nav_category; //Default
+
+        checkIsOpenFromNotification();
+
+    }
+
+    private void checkIsOpenFromNotification() {
+        boolean isOpenFromNewOrder = getIntent().getBooleanExtra(Common.IS_OPEN_ACTIVITY_NEW_ORDER, false);
+        if (isOpenFromNewOrder) {
+            navController.popBackStack();
+            navController.navigate(R.id.nav_order);
+            menuClick = R.id.nav_order;
+        }
     }
 
     private void updateToken() {
         FirebaseInstanceId.getInstance().getInstanceId()
-                .addOnFailureListener(e -> {
-                    Toast.makeText(HomeActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }).addOnSuccessListener(instanceIdResult -> {
-            Common.updateToken(HomeActivity.this, instanceIdResult.getToken(), true, false);
-
-        });
+                .addOnFailureListener(e -> Toast.makeText(HomeActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show())
+                .addOnSuccessListener(instanceIdResult -> Common.updateToken(HomeActivity.this, instanceIdResult.getToken(), true, false));
     }
 
     private void subscribeToTopic(String topicOrder) {
