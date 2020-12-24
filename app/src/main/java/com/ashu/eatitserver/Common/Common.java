@@ -43,6 +43,8 @@ public class Common {
     public static final String IS_OPEN_ACTIVITY_NEW_ORDER = "IsOpenActivityNewOrder";
     public static final String BEST_DEALS = "BestDeals";
     public static final String MOST_POPULAR = "MostPopular";
+    public static final String IS_SEND_IMAGE = "IS_SEND_IMAGE";
+    public static final String IMAGE_URL = "IMAGE_URL";
     public static CategoryModel categorySelected;
     public static final int DEFAULT_COLUMN_COUNT = 0;
     public static final int FULL_WIDTH_COLUMN = 1;
@@ -189,4 +191,7 @@ public class Common {
         return -1;
     }
 
+    public static String getNewsTopic() {
+        return "/topics/news";
+    }
 }
