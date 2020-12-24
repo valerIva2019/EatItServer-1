@@ -24,6 +24,7 @@ import com.ashu.eatitserver.Model.BestDealModel;
 import com.ashu.eatitserver.Model.CategoryModel;
 import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.Model.OrderModel;
+import com.ashu.eatitserver.Model.PopularCategoryModel;
 import com.ashu.eatitserver.Model.ServerUserModel;
 import com.ashu.eatitserver.Model.TokenModel;
 import com.ashu.eatitserver.R;
@@ -53,6 +54,7 @@ public class Common {
     public static FoodModel selectedFood;
     public static OrderModel currentOrderSelected;
     public static BestDealModel bestDealsSelected;
+    public static PopularCategoryModel mostPopularSelected;
 
 
     public static void setSpanString(String welcome, String name, TextView textView) {
