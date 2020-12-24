@@ -12,6 +12,8 @@
 
 
     <string name="menu_category">Categories</string>
+    <string name="menu_best_deals">Best Deals</string>
+    <string name="menu_most_popular">Most Popular</string>
     <string name="menu_food_list">Food List</string>
     <string name="menu_order">Order</string>
     <string name="menu_shipper">Shippers</string>
