@@ -20,6 +20,7 @@ import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 
+import com.ashu.eatitserver.Model.BestDealModel;
 import com.ashu.eatitserver.Model.CategoryModel;
 import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.Model.OrderModel;
@@ -50,6 +51,7 @@ public class Common {
     public static ServerUserModel currentServerUser;
     public static FoodModel selectedFood;
     public static OrderModel currentOrderSelected;
+    public static BestDealModel bestDealsSelected;
 
 
     public static void setSpanString(String welcome, String name, TextView textView) {
