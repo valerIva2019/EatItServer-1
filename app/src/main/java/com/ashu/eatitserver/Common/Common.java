@@ -41,6 +41,7 @@ public class Common {
     public static final String SHIPPING_ORDER_REF = "ShippingOrder";
     public static final String IS_OPEN_ACTIVITY_NEW_ORDER = "IsOpenActivityNewOrder";
     public static final String BEST_DEALS = "BestDeals";
+    public static final String MOST_POPULAR = "MostPopular";
     public static CategoryModel categorySelected;
     public static final int DEFAULT_COLUMN_COUNT = 0;
     public static final int FULL_WIDTH_COLUMN = 1;

@@ -1,16 +1,19 @@
 package com.ashu.eatitserver.Model;
 
 public class PopularCategoryModel {
-    private String menu_id, food_id, name, image;
+    private String key, menu_id, food_id, name, image;
 
-    public PopularCategoryModel(String menu_id, String food_id, String name, String image) {
-        this.menu_id = menu_id;
-        this.food_id = food_id;
-        this.name = name;
-        this.image = image;
-    }
+
 
     public PopularCategoryModel() {
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public String getMenu_id() {
