@@ -187,7 +187,9 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
                                     .setNegativeButton("CANCEL", (dialogInterface, i) -> dialogInterface.dismiss())
                                     .setPositiveButton("DELETE", (dialogInterface, i) -> {
                                         OrderModel orderModel = adapter.getItemAtPosition(pos); //get item in adapter
-                                        FirebaseDatabase.getInstance().getReference(Common.ORDER_REF)
+                                        FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                                                .child(Common.currentServerUser.getRestaurant())
+                                                .child(Common.ORDER_REF)
                                                 .child(orderModel.getKey())
                                                 .removeValue()
                                                 .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show()).addOnSuccessListener(aVoid -> {
@@ -273,7 +275,9 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
         Log.d("pos", "loadShipperList: " + pos);
 
         List<ShipperModel> tempList = new ArrayList<>();
-        DatabaseReference shipperRef = FirebaseDatabase.getInstance().getReference(Common.SHIPPER_REF);
+        DatabaseReference shipperRef = FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                .child(Common.currentServerUser.getRestaurant())
+                .child(Common.SHIPPER_REF);
         Query shipperActive = shipperRef.orderByChild("active").equalTo(true);
         shipperActive.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -351,7 +355,9 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
         shippingOrderModel.setCurrentLat(-1.0);
         shippingOrderModel.setCurrentLng(-1.0);
 
-        FirebaseDatabase.getInstance().getReference(Common.SHIPPING_ORDER_REF)
+        FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                .child(Common.currentServerUser.getRestaurant())
+                .child(Common.SHIPPING_ORDER_REF)
                 .child(orderModel.getKey())
                 .setValue(shippingOrderModel)
                 .addOnFailureListener(e -> Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show())
@@ -413,7 +419,9 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
     private void deleteOrder(int pos, OrderModel orderModel) {
         if (!TextUtils.isEmpty(orderModel.getKey())) {
 
-            FirebaseDatabase.getInstance().getReference(Common.ORDER_REF)
+            FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                    .child(Common.currentServerUser.getRestaurant())
+                    .child(Common.ORDER_REF)
                     .child(orderModel.getKey())
                     .removeValue()
                     .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())
@@ -434,7 +442,9 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
             Map<String, Object> updateData = new HashMap<>();
             updateData.put("orderStatus", status);
 
-            FirebaseDatabase.getInstance().getReference(Common.ORDER_REF)
+            FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                    .child(Common.currentServerUser.getRestaurant())
+                    .child(Common.ORDER_REF)
                     .child(orderModel.getKey())
                     .updateChildren(updateData)
                     .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())

@@ -140,7 +140,9 @@ public class BestDealsFragment extends Fragment {
     }
 
     private void deleteBestDeals() {
-        FirebaseDatabase.getInstance().getReference(Common.BEST_DEALS)
+        FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                .child(Common.currentServerUser.getRestaurant())
+                .child(Common.BEST_DEALS)
                 .child(Common.bestDealsSelected.getKey())
                 .removeValue()
                 .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())
@@ -212,7 +214,9 @@ public class BestDealsFragment extends Fragment {
     }
 
     private void updateBestDeals(Map<String, Object> updateData) {
-        FirebaseDatabase.getInstance().getReference(Common.BEST_DEALS)
+        FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                .child(Common.currentServerUser.getRestaurant())
+                .child(Common.BEST_DEALS)
                 .child(Common.bestDealsSelected.getKey())
                 .updateChildren(updateData)
                 .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())

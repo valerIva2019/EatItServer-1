@@ -153,7 +153,9 @@ public class SizeAddonEditActivity extends AppCompatActivity {
             Map<String, Object> updateData = new HashMap<>();
             updateData.put("foods", Common.categorySelected.getFoods());
 
-            FirebaseDatabase.getInstance().getReference(Common.CATEGORY_REF)
+            FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                    .child(Common.currentServerUser.getRestaurant())
+                    .child(Common.CATEGORY_REF)
                     .child(Common.categorySelected.getMenu_id())
                     .updateChildren(updateData)
                     .addOnFailureListener(e -> Toast.makeText(SizeAddonEditActivity.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show()).addOnCompleteListener(task -> {

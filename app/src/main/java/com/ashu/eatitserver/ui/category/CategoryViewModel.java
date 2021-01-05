@@ -39,16 +39,25 @@ public class CategoryViewModel extends ViewModel implements ICategoryCallbackLis
 
     public void loadCategories() {
         List<CategoryModel> tempList = new ArrayList<>();
-        DatabaseReference categoryRef = FirebaseDatabase.getInstance().getReference(Common.CATEGORY_REF);
+        DatabaseReference categoryRef = FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                .child(Common.currentServerUser.getRestaurant())
+                .child(Common.CATEGORY_REF);
         categoryRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for(DataSnapshot itemSnapshot : snapshot.getChildren()) {
-                    CategoryModel model = itemSnapshot.getValue(CategoryModel.class);
-                    model.setMenu_id(itemSnapshot.getKey());
-                    tempList.add(model);
+                if (snapshot.exists()) {
+                    for (DataSnapshot itemSnapshot : snapshot.getChildren()) {
+                        CategoryModel model = itemSnapshot.getValue(CategoryModel.class);
+                        model.setMenu_id(itemSnapshot.getKey());
+                        tempList.add(model);
+                    }
+                    if (tempList.size() > 0)
+                        categoryCallbackListener.onCategoryLoadSuccess(tempList);
+                    else
+                        categoryCallbackListener.onCategoryLoadFailed("Category Empty");
+                } else {
+                    categoryCallbackListener.onCategoryLoadFailed("Category not exists");
                 }
-                categoryCallbackListener.onCategoryLoadSuccess(tempList);
             }
 
             @Override

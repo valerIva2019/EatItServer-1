@@ -142,7 +142,9 @@ public class CategoryFragment extends Fragment {
     }
 
     private void deleteCategory() {
-        FirebaseDatabase.getInstance().getReference(Common.CATEGORY_REF)
+        FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                .child(Common.currentServerUser.getRestaurant())
+                .child(Common.CATEGORY_REF)
                 .child(Common.categorySelected.getMenu_id())
                 .removeValue()
                 .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())
@@ -214,7 +216,9 @@ public class CategoryFragment extends Fragment {
     }
 
     private void updateCategory(Map<String, Object> updateData) {
-        FirebaseDatabase.getInstance().getReference(Common.CATEGORY_REF)
+        FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                .child(Common.currentServerUser.getRestaurant())
+                .child(Common.CATEGORY_REF)
                 .child(Common.categorySelected.getMenu_id())
                 .updateChildren(updateData)
                 .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())

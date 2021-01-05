@@ -165,7 +165,6 @@ public class MainActivity extends AppCompatActivity {
             serverUserModel.setName(edt_name.getText().toString());
             serverUserModel.setPhone(edt_phone.getText().toString());
             serverUserModel.setActive(false);
-
             dialog.show();
 
             serverRef.child(serverUserModel.getUid()).setValue(serverUserModel)
