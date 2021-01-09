@@ -14,6 +14,8 @@
         <!-- Customize your theme here. -->
     </style>
 
+
+
     <style name="Theme.EatItServer.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
@@ -24,7 +26,7 @@
     <style name="Theme.EatItServer.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
     <style name="ToolbarColoredBackArrow" parent= "Theme.EatItServer">
-        <item name="android:textColorSecondary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/black</item>
     </style>
 
     <style name="LoginTheme" parent="FirebaseUI">
