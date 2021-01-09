@@ -41,6 +41,7 @@ import com.ashu.eatitserver.Common.Common;
 import com.ashu.eatitserver.Common.MySwiperHelper;
 import com.ashu.eatitserver.EventBus.ChangeMenuClick;
 import com.ashu.eatitserver.EventBus.LoadOrderEvent;
+import com.ashu.eatitserver.EventBus.PrintOrderEvent;
 import com.ashu.eatitserver.Model.FCMSendData;
 import com.ashu.eatitserver.Model.OrderModel;
 import com.ashu.eatitserver.Model.ShipperModel;
@@ -146,6 +147,25 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
         MySwiperHelper mySwiperHelper = new MySwiperHelper(getContext(), recycler_order, width / 6) {
             @Override
             public void instantiateMyButton(RecyclerView.ViewHolder viewHolder, List<MyButton> buf) {
+                buf.add(new MyButton(getContext(), "Print", 30, 0, Color.parseColor("#8b0010"),
+                        pos -> Dexter.withContext(getContext()).withPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                .withListener(new PermissionListener() {
+                                    @Override
+                                    public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
+                                        EventBus.getDefault().postSticky(new PrintOrderEvent(Common.getAppPath(getActivity()) +
+                                                Common.FILE_PRINT, adapter.getItemAtPosition(pos)));
+                                    }
+
+                                    @Override
+                                    public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
+                                        Toast.makeText(getContext(), "Accept this permission", Toast.LENGTH_SHORT).show();
+                                    }
+
+                                    @Override
+                                    public void onPermissionRationaleShouldBeShown(PermissionRequest permissionRequest, PermissionToken permissionToken) {
+
+                                    }
+                                }).check()));
                 buf.add(new MyButton(getContext(), "Directions", 30, 0, Color.parseColor("#9b0000"),
                         pos -> {
                             OrderModel orderModel = ((MyOrderAdapter)recycler_order.getAdapter()).getItemAtPosition(pos);

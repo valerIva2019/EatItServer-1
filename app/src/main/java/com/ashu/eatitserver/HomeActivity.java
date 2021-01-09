@@ -2,12 +2,13 @@ package com.ashu.eatitserver;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
-import android.content.UriMatcher;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.TextPaint;
-import android.util.AndroidException;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -19,30 +20,32 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ashu.eatitserver.Adapter.PdfDocumentAdapter;
 import com.ashu.eatitserver.Common.Common;
+import com.ashu.eatitserver.Common.PDFUtils;
 import com.ashu.eatitserver.EventBus.CategoryClick;
 import com.ashu.eatitserver.EventBus.ChangeMenuClick;
+import com.ashu.eatitserver.EventBus.PrintOrderEvent;
 import com.ashu.eatitserver.EventBus.ToastEvent;
-import com.ashu.eatitserver.Model.FCMResponse;
 import com.ashu.eatitserver.Model.FCMSendData;
+import com.ashu.eatitserver.Model.OrderModel;
 import com.ashu.eatitserver.Remote.IFCMService;
 import com.ashu.eatitserver.Remote.RetrofitFCMClient;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.pdf.BaseFont;
+import com.itextpdf.text.pdf.PdfWriter;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -59,6 +62,11 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -66,10 +74,9 @@ import java.util.UUID;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import dmax.dialog.SpotsDialog;
-import io.reactivex.Scheduler;
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -87,6 +94,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
     private FirebaseStorage storage;
     private StorageReference storageReference;
+    android.app.AlertDialog dialog;
 
     @SuppressLint("NonConstantResourceId")
     @OnClick(R.id.fab_chat)
@@ -102,14 +110,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        init();
 
-        ButterKnife.bind(this);
-        ifcmService = RetrofitFCMClient.getInstance().create(IFCMService.class);
-        storage = FirebaseStorage.getInstance();
-        storageReference = storage.getReference();
-
-        subscribeToTopic(Common.createTopicOrder());
-        updateToken();
 
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
@@ -134,6 +136,18 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         checkIsOpenFromNotification();
 
+    }
+
+    private void init() {
+        ButterKnife.bind(this);
+        ifcmService = RetrofitFCMClient.getInstance().create(IFCMService.class);
+        storage = FirebaseStorage.getInstance();
+        storageReference = storage.getReference();
+
+        subscribeToTopic(Common.createTopicOrder());
+        updateToken();
+
+        dialog = new SpotsDialog.Builder().setContext(this).setMessage("Wait...").setCancelable(false).build();
     }
 
     private void checkIsOpenFromNotification() {
@@ -332,18 +346,18 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                             dialog.show();
 
                             String file_name = UUID.randomUUID().toString();
-                            StorageReference newsImages = storageReference.child("news/"+file_name);
+                            StorageReference newsImages = storageReference.child("news/" + file_name);
                             newsImages.putFile(imgUri)
                                     .addOnFailureListener(e -> {
                                         dialog.dismiss();
-                                        Toast.makeText(HomeActivity.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(HomeActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show();
                                     }).addOnSuccessListener(taskSnapshot -> {
-                                        dialog.dismiss();
-                                        newsImages.getDownloadUrl().addOnSuccessListener(uri -> sendNews(edt_title.getText().toString(), edt_content.getText().toString(), uri.toString()));
-                                    }).addOnProgressListener(snapshot -> {
-                                        double progress = Math.round((100.0 * snapshot.getBytesTransferred() / snapshot.getTotalByteCount()));
-                                        dialog.setMessage("Uploading: " + progress + "%");
-                                    });
+                                dialog.dismiss();
+                                newsImages.getDownloadUrl().addOnSuccessListener(uri -> sendNews(edt_title.getText().toString(), edt_content.getText().toString(), uri.toString()));
+                            }).addOnProgressListener(snapshot -> {
+                                double progress = Math.round((100.0 * snapshot.getBytesTransferred() / snapshot.getTotalByteCount()));
+                                dialog.setMessage("Uploading: " + progress + "%");
+                            });
                         }
                     }
                 });
@@ -359,7 +373,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         notificationData.put(Common.NOT1_CONTENT, content);
         notificationData.put(Common.IS_SEND_IMAGE, "true");
         notificationData.put(Common.IMAGE_URL, url);
-
 
 
         FCMSendData fcmSendData = new FCMSendData(Common.getNewsTopic(), notificationData);
@@ -412,7 +425,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 }));
 
 
-}
+    }
 
     private void signOut() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -444,6 +457,135 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 imgUri = data.getData();
                 img_upload.setImageURI(imgUri);
             }
+        }
+    }
+
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    public void onPrintEventListener(PrintOrderEvent event) {
+        createPDFFile(event.getPath(), event.getOrderModel());
+    }
+
+    private void createPDFFile(String path, OrderModel orderModel) {
+        dialog.show();
+
+        if (new File(path).exists()) {
+            new File(path).delete();
+        }
+
+        try {
+            Document document = new Document();
+            //Save file
+            PdfWriter.getInstance(document, new FileOutputStream(path));
+
+            document.open();
+
+            document.setPageSize(PageSize.A4);
+            document.addCreationDate();
+            document.addAuthor("Eat It V2");
+            document.addCreator(Common.currentServerUser.getName());
+
+            BaseColor colorAccent = new BaseColor(0, 153, 204, 255);
+            float fontSize = 20.0f;
+
+            //custom font
+            BaseFont fontName = BaseFont.createFont("assets/fonts/brandon_medium.otf", "UTF-8", BaseFont.EMBEDDED);
+
+            //Create title of document
+            Font titleFont = new Font(fontName, 36.0f, Font.NORMAL, BaseColor.BLACK);
+            PDFUtils.addNewItem(document, "Order Details", Element.ALIGN_CENTER, titleFont);
+
+            Font orderNumberFont = new Font(fontName, fontSize, Font.NORMAL, colorAccent);
+            PDFUtils.addNewItem(document, "Order No : ", Element.ALIGN_LEFT, orderNumberFont);
+            Font orderNumberValueFont = new Font(fontName, 20, Font.NORMAL, BaseColor.BLACK);
+            PDFUtils.addNewItem(document, orderModel.getKey(), Element.ALIGN_LEFT, orderNumberValueFont);
+
+            PDFUtils.addLineSeparator(document);
+
+            PDFUtils.addNewItem(document, "Order Date : ", Element.ALIGN_LEFT, orderNumberFont);
+            PDFUtils.addNewItem(document, new SimpleDateFormat("dd/MM/yyyy").format(orderModel.getCreateDate()), Element.ALIGN_LEFT, orderNumberFont);
+
+            PDFUtils.addLineSeparator(document);
+
+            PDFUtils.addNewItem(document, "Account Name : ", Element.ALIGN_LEFT, orderNumberFont);
+            PDFUtils.addNewItem(document, orderModel.getUserName(), Element.ALIGN_LEFT, orderNumberFont);
+
+            PDFUtils.addLineSeparator(document);
+
+            //Add product and detail
+            PDFUtils.addLineSpace(document);
+            PDFUtils.addNewItem(document, "Product Detail :", Element.ALIGN_CENTER, titleFont);
+            PDFUtils.addLineSeparator(document);
+
+            //Use RxJava, fetch image from internet and add to pdf
+            Observable.fromIterable(orderModel.getCartItemList())
+                    .flatMap(cartItem -> Common.getBitmapFromURL(HomeActivity.this, cartItem, document))
+                    .subscribeOn(Schedulers.computation())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(cartItem -> {
+                        //On Next
+                        //Each item, we will add detail
+                        //Food name
+
+                        PDFUtils.addNewItemWithLeftAndRight(document, cartItem.getFoodName(), ("(0.0%)"), titleFont,
+                                orderNumberValueFont);
+
+                        //Food size and addon
+                        PDFUtils.addNewItemWithLeftAndRight(document,
+                                "Size",
+                                Common.formatSizeJsonToString(cartItem.getFoodSize()),
+                                titleFont, orderNumberValueFont);
+
+                        PDFUtils.addNewItemWithLeftAndRight(document,
+                                "Addon",
+                                Common.formatAddonJsonToString(cartItem.getFoodAddon()),
+                                titleFont, orderNumberValueFont);
+
+                        //Format like 1 * 30 = 30;
+                        PDFUtils.addNewItemWithLeftAndRight(document,
+                                cartItem.getFoodQuantity() +
+                                        "*" +
+                                        (cartItem.getFoodPrice() + cartItem.getFoodExtraPrice()),
+                                String.valueOf(cartItem.getFoodQuantity() * (cartItem.getFoodExtraPrice() + cartItem.getFoodPrice())),
+                                titleFont, orderNumberValueFont);
+
+                        PDFUtils.addLineSeparator(document);
+
+                    }, throwable -> {
+                        //On error
+                        dialog.dismiss();
+                        Toast.makeText(HomeActivity.this, throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                    }, () -> {
+                        //On Complete
+                        PDFUtils.addLineSpace(document);
+                        PDFUtils.addLineSpace(document);
+
+                        PDFUtils.addNewItemWithLeftAndRight(document, "Total", String.valueOf(orderModel.getTotalPayment()),
+                                titleFont, titleFont);
+
+                        document.close();
+                        dialog.dismiss();
+                        Toast.makeText(HomeActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                        printPDF();
+
+                    });
+
+
+        } catch (IOException | DocumentException e) {
+            Log.d("TAG", "createPDFFile: here");
+            e.printStackTrace();
+        }
+    }
+
+    private void printPDF() {
+        Log.d("TAG", "printPDF: here");
+        PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+        try {
+            PrintDocumentAdapter printDocumentAdapter = new PdfDocumentAdapter(this, Common.getAppPath(this) +
+                    Common.FILE_PRINT);
+            printManager.print("Document", printDocumentAdapter, new PrintAttributes.Builder().build());
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
     }
 }

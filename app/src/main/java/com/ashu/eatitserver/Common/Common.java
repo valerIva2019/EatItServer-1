@@ -8,6 +8,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -24,19 +25,37 @@ import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 
+import com.ashu.eatitserver.Model.AddonModel;
 import com.ashu.eatitserver.Model.BestDealModel;
+import com.ashu.eatitserver.Model.CartItem;
 import com.ashu.eatitserver.Model.CategoryModel;
 import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.Model.OrderModel;
 import com.ashu.eatitserver.Model.PopularCategoryModel;
 import com.ashu.eatitserver.Model.ServerUserModel;
+import com.ashu.eatitserver.Model.SizeModel;
 import com.ashu.eatitserver.Model.TokenModel;
 import com.ashu.eatitserver.R;
+import com.bumptech.glide.Glide;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.itextpdf.text.BadElementException;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Image;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import io.reactivex.Observable;
+
 
 public class Common {
     public static final String SERVER_REF = "Server";
@@ -54,6 +73,7 @@ public class Common {
     public static final String KEY_ROOM_ID = "CHAT_ROOM_ID";
     public static final String KEY_CHAT_USER = "CHAT_SENDER";
     public static final String CHAT_DETAIL_REF = "ChatDetail";
+    public static final String FILE_PRINT = "last_order_print.pdf";
     public static CategoryModel categorySelected;
     public static final int DEFAULT_COLUMN_COUNT = 0;
     public static final int FULL_WIDTH_COLUMN = 1;
@@ -103,6 +123,7 @@ public class Common {
                 return "Unk";
         }
     }
+
     public static void showNotification(Context context, int id, String title, String content, Intent intent) {
         PendingIntent pendingIntent = null;
         if (intent != null)
@@ -136,55 +157,57 @@ public class Common {
         notificationManager.notify(id, notification);
 
     }
+
     public static void updateToken(Context context, String newToken, boolean isServer, boolean isShipper) {
-     if (Common.currentServerUser != null) {
-         FirebaseDatabase.getInstance().
-                 getReference(Common.TOKEN_REF)
-                 .child(Common.currentServerUser.getUid())
-                 .setValue(new TokenModel(Common.currentServerUser.getPhone(), newToken, isServer, isShipper))
-                 .addOnFailureListener(e -> Toast.makeText(context, ""+e.getMessage(), Toast.LENGTH_SHORT).show());
-     }
+        if (Common.currentServerUser != null) {
+            FirebaseDatabase.getInstance().
+                    getReference(Common.TOKEN_REF)
+                    .child(Common.currentServerUser.getUid())
+                    .setValue(new TokenModel(Common.currentServerUser.getPhone(), newToken, isServer, isShipper))
+                    .addOnFailureListener(e -> Toast.makeText(context, "" + e.getMessage(), Toast.LENGTH_SHORT).show());
+        }
     }
+
     public static String createTopicOrder() {
         return "/topics/" +
                 Common.currentServerUser.getRestaurant() + "_new_order";
     }
 
-    public static List<LatLng> decodePoly (String encoded) {
+    public static List<LatLng> decodePoly(String encoded) {
         List poly = new ArrayList();
         int index = 0, len = encoded.length();
-        int lat =0, lng = 0;
+        int lat = 0, lng = 0;
         while (index < len) {
-            int b, shift =0, result =0;
+            int b, shift = 0, result = 0;
             do {
-                b = encoded.charAt(index++)-63;
+                b = encoded.charAt(index++) - 63;
                 result |= (b & 0xff) << shift;
-                shift+=5;
+                shift += 5;
             } while (b >= 0x20);
 
-            int dLat = ((result & 1) != 0 ? ~ (result >> 1):(result >> 1));
-            lat+=dLat;
+            int dLat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lat += dLat;
 
-            shift =0;
+            shift = 0;
             result = 0;
             do {
-                b = encoded.charAt(index++)-63;
+                b = encoded.charAt(index++) - 63;
                 result |= (b & 0xff) << shift;
-                shift+=5;
+                shift += 5;
             } while (b >= 0x20);
 
 
-            int dLng = ((result & 1) != 0 ? ~ (result >> 1):(result >> 1));
-            lng+=dLng;
+            int dLng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lng += dLng;
 
-            LatLng p = new LatLng((((double) lat/1E5)), (((double)lng/1E5)));
+            LatLng p = new LatLng((((double) lat / 1E5)), (((double) lng / 1E5)));
             poly.add(p);
         }
         return poly;
     }
 
     public static float getBearing(LatLng begin, LatLng end) {
-        double lat = Math.abs(begin.latitude-end.latitude);
+        double lat = Math.abs(begin.latitude - end.latitude);
         double lng = Math.abs(begin.longitude - end.longitude);
 
         if (begin.latitude < end.latitude && begin.longitude < end.longitude)
@@ -193,9 +216,9 @@ public class Common {
             double v = 90 - Math.toDegrees(Math.atan(lng / lat));
             if (begin.latitude >= end.latitude && begin.longitude < end.longitude)
                 return (float) (v + 90);
-            else  if (begin.latitude >= end.latitude && begin.longitude >= end.longitude)
+            else if (begin.latitude >= end.latitude && begin.longitude >= end.longitude)
                 return (float) (Math.toDegrees(Math.atan(lng / lat)) + 180);
-            else  if (begin.latitude < end.latitude && begin.longitude >= end.longitude)
+            else if (begin.latitude < end.latitude && begin.longitude >= end.longitude)
                 return (float) (v + 270);
         }
         return -1;
@@ -224,4 +247,64 @@ public class Common {
         }
         return result;
     }
+
+    public static String getAppPath(Context context) {
+        File dir = new File(android.os.Environment.getExternalStorageDirectory()
+                + File.separator
+                + context.getResources().getString(R.string.app_name)
+                + File.separator);
+
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        return dir.getPath() + File.separator;
+    }
+
+    public static Observable<CartItem> getBitmapFromURL(Context context, CartItem cartItem, Document document) {
+        return io.reactivex.Observable.fromCallable(() -> {
+
+            Bitmap bitmap = null;
+                bitmap = Glide.with(context)
+                        .asBitmap()
+                        .load(cartItem.getFoodImg())
+                        .submit().get();
+                Image image = null;
+
+                image = Image.getInstance(bitmapToByteArray(bitmap));
+                image.scaleAbsolute(80, 80);
+
+                document.add(image);
+            return cartItem;
+
+    });
+    }
+
+    private static byte[] bitmapToByteArray(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        return stream.toByteArray();
+    }
+
+    public static String formatSizeJsonToString(String foodSize) {
+        if (foodSize.equals("Default"))
+            return foodSize;
+        else {
+            Gson gson = new Gson();
+            SizeModel sizeModel = gson.fromJson(foodSize, SizeModel.class);
+            return sizeModel.getName();
+        }
+    }
+
+    public static String formatAddonJsonToString(String foodAddon) {
+        if (foodAddon.equals("Default"))
+            return foodAddon;
+        else {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            Gson gson = new Gson();
+            List<AddonModel> addonModels = gson.fromJson(foodAddon, new TypeToken<List<AddonModel>>(){}.getType());
+            for (AddonModel addonModel : addonModels)
+                stringBuilder.append(addonModel.getName()).append(",");
+            return stringBuilder.substring(0, stringBuilder.length() - 1);
+        }    }
 }
