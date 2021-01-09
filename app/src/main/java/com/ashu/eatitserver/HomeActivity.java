@@ -1,5 +1,6 @@
 package com.ashu.eatitserver;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.UriMatcher;
@@ -7,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextPaint;
 import android.util.AndroidException;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -86,6 +88,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private FirebaseStorage storage;
     private StorageReference storageReference;
 
+    @SuppressLint("NonConstantResourceId")
     @OnClick(R.id.fab_chat)
     void onOpenChatList() {
         startActivity(new Intent(this, ChatListActivity.class));

@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -69,7 +70,12 @@ public class ChatListActivity extends AppCompatActivity {
                 holder.txt_chat_message.setText(model.getLastMessage());
                 Log.d("TAG", "loadListChat: here" + model.getCreateName());
 
-                holder.setListener(((view, pos) -> Toast.makeText(ChatListActivity.this, model.getLastMessage(), Toast.LENGTH_SHORT).show()));
+                holder.setListener(((view, pos) -> {
+                    Intent intent = new Intent(ChatListActivity.this, ChatDetailActivity.class);
+                    intent.putExtra(Common.KEY_ROOM_ID, adapter.getRef(position).getKey());
+                    intent.putExtra(Common.KEY_CHAT_USER, model.getCreateName());
+                    startActivity(intent);
+                }));
             }
 
             @NonNull
