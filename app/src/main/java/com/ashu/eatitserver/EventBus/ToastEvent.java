@@ -1,20 +1,22 @@
 package com.ashu.eatitserver.EventBus;
 
+import com.ashu.eatitserver.Common.Common;
+
 public class ToastEvent {
-    private boolean isUpdate;
+    private Common.ACTION action;
     private boolean isFromFoodList;
 
-    public ToastEvent(boolean isUpdate, boolean isFromFoodList) {
-        this.isUpdate = isUpdate;
+    public ToastEvent(Common.ACTION action, boolean isFromFoodList) {
+        this.action = action;
         this.isFromFoodList = isFromFoodList;
     }
 
-    public boolean isUpdate() {
-        return isUpdate;
+    public Common.ACTION getAction() {
+        return action;
     }
 
-    public void setUpdate(boolean update) {
-        isUpdate = update;
+    public void setAction(Common.ACTION action) {
+        this.action = action;
     }
 
     public boolean isFromFoodList() {

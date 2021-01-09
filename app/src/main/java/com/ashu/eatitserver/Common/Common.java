@@ -41,21 +41,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Image;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import io.reactivex.Observable;
-
 
 public class Common {
     public static final String SERVER_REF = "Server";
@@ -87,6 +81,11 @@ public class Common {
     public static BestDealModel bestDealsSelected;
     public static PopularCategoryModel mostPopularSelected;
 
+    public enum ACTION{
+        CREATE,
+        UPDATE,
+        DELETE
+    }
 
     public static void setSpanString(String welcome, String name, TextView textView) {
         SpannableStringBuilder builder = new SpannableStringBuilder();

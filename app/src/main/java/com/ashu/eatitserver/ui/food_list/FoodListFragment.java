@@ -293,7 +293,7 @@ public class FoodListFragment extends Fragment {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         foodListViewModel.getMutableLiveDataFoodList();
-                        EventBus.getDefault().postSticky(new ToastEvent(!isDelete, true));
+                        EventBus.getDefault().postSticky(new ToastEvent(Common.ACTION.UPDATE, true));
 
                     }
                 });

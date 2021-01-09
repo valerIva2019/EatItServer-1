@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ashu.eatitserver.Adapter.MyCategoriesAdapter;
+import com.ashu.eatitserver.Common.BottomSheetOrderFragment;
 import com.ashu.eatitserver.Common.Common;
 import com.ashu.eatitserver.Common.MySwiperHelper;
 import com.ashu.eatitserver.EventBus.MenuItemBack;
@@ -129,6 +130,95 @@ public class CategoryFragment extends Fragment {
         };
 
     }
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.action_bar_menu, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
+        if (item.getItemId() == R.id.action_create) {
+           showAddDialog();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showAddDialog() {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getContext());
+        builder.setTitle("Create");
+        builder.setMessage("Please fill information");
+
+        View itemView = LayoutInflater.from(getContext()).inflate(R.layout.layout_update_category, null);
+        EditText edt_category_name =  itemView.findViewById(R.id.edt_category_name);
+        img_category = itemView.findViewById(R.id.img_category);
+
+        //Set Data
+        Glide.with(getContext()).load(R.drawable.ic_baseline_image_24).into(img_category);
+
+
+        //Set Event
+        img_category.setOnClickListener(view -> {
+            Intent intent = new Intent();
+            intent.setType("image/*");
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
+        });
+
+        builder.setNegativeButton("CANCEL", (dialogInterface, i) -> dialogInterface.dismiss())
+                .setPositiveButton("CREATE", (dialogInterface, i) -> {
+
+                    CategoryModel categoryModel = new CategoryModel();
+                    categoryModel.setName(edt_category_name.getText().toString());
+                    categoryModel.setFoods(new ArrayList<>());
+
+                    if (imageUri != null) {
+                        dialog.setMessage("Uploading");
+                        dialog.show();
+
+                        String unique_name = UUID.randomUUID().toString();
+                        StorageReference imageFolder = storageReference.child("images/" + unique_name);
+
+
+                        imageFolder.putFile(imageUri)
+                                .addOnFailureListener(e -> {
+                                    dialog.dismiss();
+                                    Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }).addOnCompleteListener(task -> {
+                            dialog.dismiss();
+                            imageFolder.getDownloadUrl().addOnSuccessListener(uri -> {
+                                categoryModel.setImage(uri.toString());
+                               addCategory(categoryModel);
+                            });
+                        }).addOnProgressListener(snapshot -> {
+                            double progress = (100.0 * snapshot.getBytesTransferred() / snapshot.getTotalByteCount());
+                            dialog.setMessage("Uploading: " + progress + "%");
+                        });
+                    } else {
+                        addCategory(categoryModel);
+                    }
+                });
+
+        builder.setView(itemView);
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.show();
+
+    }
+
+    private void addCategory(CategoryModel categoryModel) {
+        FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                .child(Common.currentServerUser.getRestaurant())
+                .child(Common.CATEGORY_REF)
+                .push()
+                .setValue(categoryModel)
+                .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())
+                .addOnCompleteListener(task -> {
+                    categoryViewModel.loadCategories();
+                    EventBus.getDefault().postSticky(new ToastEvent(Common.ACTION.CREATE, false));
+                });
+    }
+
 
     private void showDeleteDialog() {
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(getContext());
@@ -150,7 +240,7 @@ public class CategoryFragment extends Fragment {
                 .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())
                 .addOnCompleteListener(task -> {
                     categoryViewModel.loadCategories();
-                    EventBus.getDefault().postSticky(new ToastEvent(false, false));
+                    EventBus.getDefault().postSticky(new ToastEvent(Common.ACTION.DELETE, false));
                 });
     }
 
@@ -224,7 +314,7 @@ public class CategoryFragment extends Fragment {
                 .addOnFailureListener(e -> Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show())
                 .addOnCompleteListener(task -> {
             categoryViewModel.loadCategories();
-            EventBus.getDefault().postSticky(new ToastEvent(true, false));
+            EventBus.getDefault().postSticky(new ToastEvent(Common.ACTION.UPDATE, false));
         });
     }
 
