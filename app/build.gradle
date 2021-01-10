@@ -84,5 +84,7 @@ dependencies {
     implementation 'com.github.andremion:counterfab:1.2.2'
 
     implementation 'com.itextpdf:itextg:5.5.10'
+    implementation 'net.cachapa.expandablelayout:expandablelayout:2.9.2'
+
 
 }

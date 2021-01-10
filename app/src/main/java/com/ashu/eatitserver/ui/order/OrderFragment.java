@@ -368,6 +368,7 @@ public class OrderFragment extends Fragment implements IShipperLoadCallbackListe
         Log.d("pos", "createShippingOrder: " + pos);
 
         ShippingOrderModel shippingOrderModel = new ShippingOrderModel();
+        shippingOrderModel.setRestaurantKey(Common.currentServerUser.getRestaurant());
         shippingOrderModel.setShipperPhone(shipperModel.getPhone());
         shippingOrderModel.setShipperName(shipperModel.getName());
         shippingOrderModel.setOrderModel(orderModel);

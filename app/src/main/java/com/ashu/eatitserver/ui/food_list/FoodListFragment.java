@@ -232,6 +232,7 @@ public class FoodListFragment extends Fragment {
                 .setPositiveButton("CREATE", (dialogInterface, i) -> {
 
                     FoodModel updateFood = new FoodModel();
+                    updateFood.setId(UUID.randomUUID().toString());
                     updateFood.setName(edt_food_name.getText().toString());
                     updateFood.setDescription(edt_food_description.getText().toString());
                     updateFood.setPrice(TextUtils.isEmpty(edt_food_price.getText()) ? 0 :
