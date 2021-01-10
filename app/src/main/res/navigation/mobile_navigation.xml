@@ -12,6 +12,17 @@
         tools:layout="@layout/fragment_category" />
 
     <fragment
+        android:id="@+id/nav_discount"
+        android:name="com.ashu.eatitserver.ui.discount.DiscountFragment"
+        android:label="@string/menu_discount"
+        tools:layout="@layout/fragment_discount" >
+        <action android:id="@+id/clearBackstack"
+            app:launchSingleTop="true"
+            app:popUpTo="@id/nav_category"
+            app:popUpToInclusive="true"/>
+    </fragment>
+
+    <fragment
         android:id="@+id/nav_food_list"
         android:name="com.ashu.eatitserver.ui.food_list.FoodListFragment"
         android:label="@string/menu_food_list"

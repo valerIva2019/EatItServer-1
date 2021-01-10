@@ -96,7 +96,6 @@ public class MyFoodListAdapter extends RecyclerView.Adapter<MyFoodListAdapter.My
                 .setValue(popularCategoryModel)
                 .addOnFailureListener(e -> Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show())
                 .addOnSuccessListener(aVoid -> Toast.makeText(context, "Create Most Popular successfully !", Toast.LENGTH_SHORT).show());
-
     }
 
     private void makeFoodToBestDealOfRestaurant(FoodModel foodModel) {

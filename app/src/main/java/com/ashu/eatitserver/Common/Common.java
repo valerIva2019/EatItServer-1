@@ -29,6 +29,7 @@ import com.ashu.eatitserver.Model.AddonModel;
 import com.ashu.eatitserver.Model.BestDealModel;
 import com.ashu.eatitserver.Model.CartItem;
 import com.ashu.eatitserver.Model.CategoryModel;
+import com.ashu.eatitserver.Model.DiscountModel;
 import com.ashu.eatitserver.Model.FoodModel;
 import com.ashu.eatitserver.Model.OrderModel;
 import com.ashu.eatitserver.Model.PopularCategoryModel;
@@ -68,6 +69,7 @@ public class Common {
     public static final String KEY_CHAT_USER = "CHAT_SENDER";
     public static final String CHAT_DETAIL_REF = "ChatDetail";
     public static final String FILE_PRINT = "last_order_print.pdf";
+    public static final String DISCOUNT = "Discount";
     public static CategoryModel categorySelected;
     public static final int DEFAULT_COLUMN_COUNT = 0;
     public static final int FULL_WIDTH_COLUMN = 1;
@@ -80,6 +82,7 @@ public class Common {
     public static OrderModel currentOrderSelected;
     public static BestDealModel bestDealsSelected;
     public static PopularCategoryModel mostPopularSelected;
+    public static DiscountModel discountSelected;
 
     public enum ACTION{
         CREATE,

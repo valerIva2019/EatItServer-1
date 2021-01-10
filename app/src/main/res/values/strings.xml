@@ -21,5 +21,6 @@
     <string name="popular_categories">Popular Categories</string>
     <string name="title_activity_tracking_order">Map</string>
     <string name="menu_send_news">News System</string>
+    <string name="menu_discount">Discount</string>
 
 </resources>
