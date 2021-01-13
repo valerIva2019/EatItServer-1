@@ -70,6 +70,7 @@ public class Common {
     public static final String CHAT_DETAIL_REF = "ChatDetail";
     public static final String FILE_PRINT = "last_order_print.pdf";
     public static final String DISCOUNT = "Discount";
+    public static final String LOCATION_REF = "Location";
     public static CategoryModel categorySelected;
     public static final int DEFAULT_COLUMN_COUNT = 0;
     public static final int FULL_WIDTH_COLUMN = 1;

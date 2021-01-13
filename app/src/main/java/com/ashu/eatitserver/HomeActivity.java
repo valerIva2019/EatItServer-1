@@ -1,9 +1,12 @@
 package com.ashu.eatitserver;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.print.PrintAttributes;
@@ -29,11 +32,21 @@ import com.ashu.eatitserver.EventBus.PrintOrderEvent;
 import com.ashu.eatitserver.EventBus.ToastEvent;
 import com.ashu.eatitserver.Model.FCMSendData;
 import com.ashu.eatitserver.Model.OrderModel;
+import com.ashu.eatitserver.Model.RestaurantLocationModel;
 import com.ashu.eatitserver.Remote.IFCMService;
 import com.ashu.eatitserver.Remote.RetrofitFCMClient;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.CancellationToken;
+import com.google.android.gms.tasks.OnCanceledListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.OnTokenCanceledListener;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
@@ -46,10 +59,17 @@ import com.itextpdf.text.Font;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -236,7 +256,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             Toast.makeText(this, "Create Success", Toast.LENGTH_SHORT).show();
         else if (event.getAction() == Common.ACTION.UPDATE) {
             Toast.makeText(this, "Update Success", Toast.LENGTH_SHORT).show();
-        } else{
+        } else {
             Toast.makeText(this, "Delete Success", Toast.LENGTH_SHORT).show();
         }
         EventBus.getDefault().postSticky(new ChangeMenuClick(event.isFromFoodList()));
@@ -269,6 +289,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
                 }
                 break;
+            case R.id.nav_location:
+                showUpdateLocationDialog();
+                break;
             case R.id.nav_discount:
                 if (item.getItemId() != menuClick) {
                     navController.popBackStack();
@@ -300,6 +323,60 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
         menuClick = item.getItemId();
         return true;
+    }
+
+    private void showUpdateLocationDialog() {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setTitle("Update Location");
+        builder.setMessage("Do you want to update the location of your restaurant ?");
+
+        builder.setNegativeButton("NO", (dialogInterface, i) -> dialogInterface.dismiss())
+                .setPositiveButton("YES", (dialogInterface, i) -> {
+                    Dexter.withContext(HomeActivity.this).withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                            .withListener(new PermissionListener() {
+                                @Override
+                                public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
+                                    FusedLocationProviderClient fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(HomeActivity.this);
+
+                                    if (ActivityCompat.checkSelfPermission(HomeActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(HomeActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                                        return;
+                                    }
+                                    fusedLocationProviderClient.getCurrentLocation(LocationRequest.PRIORITY_HIGH_ACCURACY, new CancellationToken() {
+                                        @Override
+                                        public boolean isCancellationRequested() {
+                                            return true;
+                                        }
+
+                                        @NonNull
+                                        @Override
+                                        public CancellationToken onCanceledRequested(@NonNull OnTokenCanceledListener onTokenCanceledListener) {
+                                            return null;
+                                        }
+                                    }).addOnSuccessListener(location -> {
+
+                                        FirebaseDatabase.getInstance().getReference(Common.RESTAURANT_REF)
+                                                .child(Common.currentServerUser.getRestaurant())
+                                                .child(Common.LOCATION_REF)
+                                                .setValue(new RestaurantLocationModel(location.getLatitude(), location.getLongitude()))
+                                                .addOnSuccessListener(aVoid -> Toast.makeText(HomeActivity.this, "Updated location successfully", Toast.LENGTH_SHORT).show()).addOnFailureListener(e -> Toast.makeText(HomeActivity.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show());
+
+                                    }).addOnFailureListener(e -> Toast.makeText(HomeActivity.this, "" + e.getMessage(), Toast.LENGTH_SHORT).show());
+                                }
+
+                                @Override
+                                public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
+                                    Toast.makeText(HomeActivity.this, "You must allow this permission", Toast.LENGTH_SHORT).show();
+                                }
+
+                                @Override
+                                public void onPermissionRationaleShouldBeShown(PermissionRequest permissionRequest, PermissionToken permissionToken) {
+
+                                }
+                            }).check();
+                });
+
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     private void showNewsDialog() {
